@@ -29,6 +29,6 @@ Instructions:
 
 Now you should be able to talk to your Volkswagen using Alexa.
 
-Code to come.
+
 
 Big thanks to Strosel https://github.com/Strosel/Carnet-alexa
