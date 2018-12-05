@@ -9,12 +9,11 @@ What you need:
 Note: use the same email of your Alexa account for the Alexa Develoepr account.
 
 Instructions:
-- Create a zip file with `lambda_function.py` and `modules` folder.
 - Login to the AWS Developer Console and select the regions closest to you that support Alexa.
 - Then select Lambda from the Services.
 - Go to Functions, Create a Function, Author from scratch.
 - Enter a funciton name: e.g. myCarNet, runtime: Python 2.7, Role: Create a new role from one or more templates, Role name: lambda_basic_execution, Policy templates: Simple microservice permissions.
-- In Function code select Code entry type; upload a .zip file and upload file from step 1.
+- In Function code select Code entry type; upload the .zip file and upload the myCarNet.zip file.
 - Change handler to `lambda_function.main`
 - Under basic settings change time out to 1 minute, 30 seconds.
 - Create two environment variables. `UID` for your CarNet email address, `PWD` for the passowrd. You can encrypt the values for intransit using the KMS service. This costs one(1) USD per month, and you must create your own key. AWS does store the values encrypted when the lambda is not running.
