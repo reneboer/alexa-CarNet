@@ -21,7 +21,7 @@ Instructions:
 - Copy the value for ARN from the top right.
 - Save it all and logon to the Alexa development console
 - Click Create Skill, enter name: Car Net. Select Custom
-- In "Interaction Model" open the skill builder and upload 'inteactionmodel.json' in the code section.
+- In "Interaction Model" open the skill builder and upload `inteactionmodel.json` in the code section.
 - Save and build before moving on to the "Configuration" Section.
 - Click Endpoint. Select AWS Lambda ARN. In Default region put the ARN value you took from the AWS lambda function.
 - The copy the value of Your Skill ID and go back to the AWS developer console.
