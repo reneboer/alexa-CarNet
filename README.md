@@ -1,5 +1,5 @@
-# alexca-CarNet
-Have Alexa report your VW status and send commands the CarNet App supports as well.
+# Alexa CarNet skill
+Have Alexa report your VW status and send commands using your voice rather then the CarNet App on your phone.
 
 What you need: 
 * an Alexa Echo, Dot or other device supporting Alexa.
@@ -31,7 +31,17 @@ Instructions:
 
 Now you should be able to talk to your Volkswagen using Alexa.
 
-Working on the list of commands you can use.
+# A sub-set of things to ask Alexa with this Car Net skill
+`Alexa ask car net how much battery my car has`<br>
+`Alexa ask car net how how far can my car drive on batteries`<br>
+`Alexa ask car net if my car is charging`<br>
+`Alexa ask car net where my car is`<br>
+`Alexa ask car net start charging my car`<br>
+`Alexa ask car net stop heating my car`<br>
+`Alexa ask car net, is my car heating?`<br>
+`Alexa ask car net, is my car locked?`<br>
+`Alexa ask car net. What's the status of my car?`<br>
+For more, check the `Complete_list_of_commands.txt`
 
 You can look at the Python code in the lambda_function.py. it is the same as included in the .zip file.
 
