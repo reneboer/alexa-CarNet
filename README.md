@@ -6,7 +6,7 @@ What you need:
 * an Alexa developer account, https://developer.amazon.com/. After registration, select Developer Console
 * an AWS Console developer account, https://aws.amazon.com/. After registration, select Sign in to the Console
 * a VW CarNet account<br>
-Note: use the same email of your Alexa account for the Alexa Develoepr account.
+Note: you must use the email of your Alexa account for the Alexa Developer account (password can be different).
 
 Instructions:
 - Login to the AWS Developer Console and select the regions closest to you that support Alexa.
