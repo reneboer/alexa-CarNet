@@ -17,6 +17,7 @@ Instructions:
 - Change handler to `lambda_function.main`
 - Under basic settings change time out to 1 minute, 30 seconds.
 - Create two environment variables. `UID` for your CarNet email address, `PWD` for the passowrd. You can encrypt the values for intransit using the KMS service. This costs one(1) USD per month, and you must create your own key. AWS does store the values encrypted when the lambda is not running.
+- If you want to have the parking address included you must have a Google API key. The create a third environment variable `GoogleAPIKey` to store it.
 - Copy the value for ARN from the top right.
 - Save it all and logon to the Alexa development console
 - Click Create Skill, enter name: Car Net. Select Custom
@@ -30,6 +31,9 @@ Instructions:
 
 Now you should be able to talk to your Volkswagen using Alexa.
 
+Working on the list of commands you can use.
+
+You can look at the Python code in the lambda_function.py. it is the same as included in the .zip file.
 
 
 Big thanks to Strosel https://github.com/Strosel/Carnet-alexa
