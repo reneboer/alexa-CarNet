@@ -2,7 +2,7 @@
 Have Alexa report your VW status and send commands the CarNet App supports as well.
 
 What you need: 
-* an Alexa 
+* an Alexa Echo, Dot or other device supporting Alexa.
 * an Alexa developer account, https://developer.amazon.com/. After registration, select Developer Console
 * an AWS Console developer account, https://aws.amazon.com/. After registration, select Sign in to the Console
 * a VW CarNet account<br>
