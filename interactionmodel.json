@@ -46,6 +46,8 @@
                     "name": "HeatInfoIntent",
                     "slots": [],
                     "samples": [
+                        "is the climate control on",
+                        "is the air con off",
                         "if my car's heating",
                         "if my car's heat is on",
                         "if my car's climate control is on",
@@ -72,6 +74,7 @@
                     "name": "LocationInfoIntent",
                     "slots": [],
                     "samples": [
+                        "get location",
                         "Where my car is",
                         "where's my car",
                         "get the location of my car",
@@ -114,9 +117,10 @@
                     "name": "DoorsInfoIntent",
                     "slots": [],
                     "samples": [
+                        "what's the status of my car's doors",
                         "is my car's roof closed",
-                        "what is the status of the doors",
-                        "are my car doors locked",
+                        "what's the status of the doors",
+                        "are my car's doors locked",
                         "is my car locked"
                     ]
                 },
@@ -124,18 +128,22 @@
                     "name": "LightsInfoIntent",
                     "slots": [],
                     "samples": [
+                        "what's the status of the lights",
                         "are the lights on",
-                        "what is the status of my lights",
-                        "are my car lights on"
+                        "what's the status of my car's lights",
+                        "are my car's lights on"
                     ]
                 },
                 {
                     "name": "RangeInfoIntent",
                     "slots": [],
                     "samples": [
-                        "who far can I drive on batteries",
-                        "who far can my car drive",
-                        "who far can I drive"
+                        "how far can i go",
+                        "what's my car's battery range",
+                        "how far can my car go on batteries",
+                        "how far can my car drive on batteries",
+                        "how far can my car drive",
+                        "how far can my car go"
                     ]
                 }
             ],
