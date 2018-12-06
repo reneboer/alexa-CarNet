@@ -26,6 +26,7 @@ Instructions:
 - The copy the value of Your Skill ID and go back to the AWS developer console.
 - Add Alexa Skills Kit as trigger to your function and paste in the Your Skill ID value. Hit Save
 - Go back to the Alexa console to Text. In the Alexa Silulator enter 'open car net' and you should hear the status of your car.
+- Check that you see the car net skill in teh Alexa app under Your Skills, Dev.
 
 Now you should be able to talk to your Volkswagen using Alexa.
 
