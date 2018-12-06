@@ -1,0 +1,85 @@
+Battery Information:
+    how much battery my car has
+    how much battery does my car have
+    what battery percentage is my car at
+    how charged is my car
+
+Charge Information:
+    is my car charging
+    my car is charging
+    if my car is charging
+
+Distance Information:
+    how far my car has driven
+    how far my car's driven
+
+Heating Information:
+	is the climate control on
+    is the air con off
+    if my car's heating
+    if my car's heat is on
+    if my car's climate control is on
+    if my car's window heating is on
+    is my car heating
+    is my car's heating on
+    is my car's climate control on
+    is my car's window heating on
+
+Generic Information 
+    what's the status of my car
+    what's my car's status
+    get the info of my car
+    get my car's info
+    get info
+    get status
+
+Location Information:
+    get location
+    Where my car is
+    where's my car
+    get the location of my car
+    locate my car
+
+Doors Information:
+    what's the status of my car's doors
+    is my car's roof closed
+    what's the status of the doors
+    are my car's doors locked
+    is my car locked
+
+Lights Information:
+    what's the status of the lights
+    are the lights on
+    what's the status of my car's lights
+    are my car's lights on
+
+Range Information:
+    how far can i go
+    what's my car's battery range
+    how far can my car go on batteries
+    how far can my car drive on batteries
+    how far can my car drive
+    how far can my car go
+
+Starting Tasks:
+    start {task}
+    Begin {task}
+    activate {task}
+    start {task} my car
+    Begin {task} my car
+
+Stopping Tasks:
+    Stop {task}
+    end {task}
+    deactivate {task}
+    Stop {task} my car
+    end {task} my car
+
+Tasks:  
+    window-heating
+    climate
+	climatize
+    charge
+	charging
+	heat
+    heating
