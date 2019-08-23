@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
-# Version 0.2
+# Version 2.0
+#	- Updated for WE Connect portal
 #	- Fixed Google geocode location API call
 #	- Corrected charging status report.
 #
@@ -18,7 +19,14 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '/modules'))
 import requests
 import boto3
 from base64 import b64decode
-from urlparse import urlsplit
+#from urlparse import urlsplit
+# import correct lib for python v3.x or fallback to v2.x
+try: 
+    import urllib.parse as urlparse
+except ImportError:
+    # Python 2
+    import urlparse
+
 
 # Get the value of an Environment Variable. 
 # First see if it is encrypted for in transit, if so dycrypt.
@@ -63,7 +71,16 @@ class VWCarnet(object):
 			return
 		
 		# Fake the VW CarNet mobile app headers
-		self.headers = { 'Accept': 'application/json, text/plain, */*', 'Content-Type': 'application/json;charset=UTF-8', 'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0.1; D5803 Build/23.5.A.1.291; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/63.0.3239.111 Mobile Safari/537.36' }
+		self.headers = { 
+			'Accept-Encoding': 'gzip, deflate, br',
+			'Accept-Language': 'en-US,nl;q=0.7,en;q=0.3',
+			'Accept': 'application/json, text/plain, */*',
+			'Content-Type': 'application/json;charset=UTF-8',
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0',
+			'Connection': 'keep-alive',
+			'Pragma': 'no-cache',
+			'Cache-Control': 'no-cache'
+		}	
 		self.session = requests.Session()
 		self.timeout_counter = 30 # seconds
 		
@@ -71,119 +88,160 @@ class VWCarnet(object):
 			self._carnet_logon()
 		except AssertionError as error:
 			self.talk += "Sorry, I can't log in at this time."
-			self.talk += error
+			self.talk += str(error)
+		except StandardError as error:	
+			self.talk += "Sorry, some error : "
+			self.talk += str(error)
 		except:	
 			self.talk += "Sorry, I can't log in at this time. Check credentials."
 
 	def _carnet_logon(self):
-		AUTHHEADERS = {
-			'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8',
-			'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0.1; D5803 Build/23.5.A.1.291; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/63.0.3239.111 Mobile Safari/537.36'}
 
-		auth_base = "https://security.volkswagen.com"
-		base = "https://www.volkswagen-car-net.com"
+		def remove_newline_chars(string):
+			return string.replace('\n', '').replace('\r', '')
 
-		# Regular expressions to extract data
-		csrf_re = re.compile('<meta name="_csrf" content="([^"]*)"/>')
-		redurl_re = re.compile('<redirect url="([^"]*)"></redirect>')
-		viewstate_re = re.compile('name="javax.faces.ViewState" id="j_id1:javax.faces.ViewState:0" value="([^"]*)"')
-		authcode_re = re.compile('code=([^"]*)&')
-		authstate_re = re.compile('state=([^"]*)')
+		def extract_csrf(string):
+			# Get value from HTML head _csrf meta tag.
+			try:
+				csrf_re = re.compile('<meta name="_csrf" content="(.*?)"/>')
+				resp = csrf_re.search(string).group(1)
+			except:
+				resp = ''
+			return resp
 
-		def extract_csrf(r):
-			return csrf_re.search(r.text).group(1)
+		def extract_login_hmac(string):
+			# Get hmac value from html input form.
+			try:
+				regex = re.compile('<input.*?id="hmac".*?value="(.*?)"/>')
+				resp = regex.search(string).group(1)
+			except:
+				resp = ''
+			return resp
 
-		def extract_redirect_url(r):
-			return redurl_re.search(r.text).group(1)
+		def extract_login_csrf(string):
+			# Get csrf value from html input form.
+			try:
+				regex = re.compile('<input.*?id="csrf".*?value="(.*?)"/>')
+				resp = regex.search(string).group(1)
+			except:
+				resp = ''
+			return resp
 
-		def extract_view_state(r):
-			return viewstate_re.search(r.text).group(1)
+		def extract_url_parameter(url, cmnd):
+			# Get parameter value from url.
+			try:
+				parsed = urlparse.urlparse(url)
+				resp = urlparse.parse_qs(parsed.query)[cmnd][0]
+			except:
+				resp = ''
+			return resp
 
-		def extract_code(r):
-			return authcode_re.search(r).group(1)
+		base_url = "https://www.portal.volkswagen-we.com"
+		auth_base_url = 'https://identity.vwgroup.io'
+		
+		# Step 1, Request landing page and get CSRF:
+		landing_page_url = base_url + '/portal/en_GB/web/guest/home'
+		landing_page_response = self.session.get(landing_page_url)
+		assert (landing_page_response.status_code == 200), "WE Connect portal not availble (1)."
+		csrf = extract_csrf(landing_page_response.text)
+		assert (csrf != ''), 'Failed to get CSRF from landing page (1).'
 
-		def extract_state(r):
-			return authstate_re.search(r).group(1)
-
-		# Request landing page and get CSFR:
-		r = self.session.get(base + '/portal/en_GB/web/guest/home')
-		assert (r.status_code == 200), "Car Net portal not availble (1)."
-		csrf = extract_csrf(r)
-
-		# Request login page and get CSRF
-		AUTHHEADERS["Referer"] = base + '/portal'
-		AUTHHEADERS["X-CSRF-Token"] = csrf
-		r = self.session.post(base + '/portal/web/guest/home/-/csrftokenhandling/get-login-url', headers=AUTHHEADERS)
-		assert (r.status_code == 200), "Car Net portal not availble (2)."
-		responseData = json.loads(r.content)
-		lg_url = responseData.get("loginURL").get("path")
-
-		# no redirect so we can get values we look for
-		r = self.session.get(lg_url, allow_redirects=False, headers = AUTHHEADERS)
-		assert (r.status_code == 302), "Car Net portal not availble (3)."
-		ref_url = r.headers.get("location")
-
-		# now get actual login page and get session id and ViewState
-		r = self.session.get(ref_url, headers = AUTHHEADERS)
-		assert (r.status_code == 200), "Car Net portal not availble (4)."
-		view_state = extract_view_state(r)
-
-		# Login with user details
-		AUTHHEADERS["Faces-Request"] = "partial/ajax"
-		AUTHHEADERS["Referer"] = ref_url
-		AUTHHEADERS["X-CSRF-Token"] = ''
-
-		post_data = {
-			'loginForm': 'loginForm',
-			'loginForm:email': self.carnet_username,
-			'loginForm:password': self.carnet_password,
-			'loginForm:j_idt19': '',
-			'javax.faces.ViewState': view_state,
-			'javax.faces.source': 'loginForm:submit',
-			'javax.faces.partial.event': 'click',
-			'javax.faces.partial.execute': 'loginForm:submit loginForm',
-			'javax.faces.partial.render': 'loginForm',
-			'javax.faces.behavior.event': 'action',
-			'javax.faces.partial.ajax': 'true'
+		# Step 2, Get login page url. POST returns JSON with loginURL for next step.
+		auth_request_headers = {
+			'Accept-Encoding': 'gzip, deflate, br',
+			'Accept-Language': 'en-US,nl;q=0.7,en;q=0.3',
+			'Accept': 'text/html,application/xhtml+xml,application/xml,application/json;q=0.9,*/*;q=0.8',
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:68.0) Gecko/20100101 Firefox/68.0',
+			'Connection': 'keep-alive',
+			'Pragma': 'no-cache',
+			'Cache-Control': 'no-cache'
 		}
+		auth_request_headers['Referer'] = landing_page_url
+		auth_request_headers['X-CSRF-Token'] = csrf
+		get_login_url = base_url + '/portal/en_GB/web/guest/home/-/csrftokenhandling/get-login-url'
+		login_page_response = self.session.post(get_login_url, headers=auth_request_headers)
+		assert (login_page_response.status_code == 200), "WE Connect portal not availble (2)."
+		try:
+			login_url = json.loads(login_page_response.text).get('loginURL').get('path')
+		except:	
+			login_url = ''
+		assert (login_url != ''), 'Failed to get login_url (2).'
+		client_id = extract_url_parameter(login_url, 'client_id')
+		assert (client_id != ''), 'Failed to get client_id (2).'
 
-		r = self.session.post(auth_base + '/ap-login/jsf/login.jsf', data=post_data, headers = AUTHHEADERS)
-		assert (r.status_code == 200), "Car Net login error."
-		ref_url = extract_redirect_url(r).replace('&amp;', '&')
+		# Step 3, Get login form url we are told to use, it will give us a new location.
+		login_url_response = self.session.get(login_url, allow_redirects=False, headers=auth_request_headers)
+		assert (login_url_response.status_code == 302), "WE Connect portal not availble (3)."
+		login_form_url = login_url_response.headers.get('location')
+		login_relay_state_token = extract_url_parameter(login_form_url, 'relayState')
+		assert (login_form_url != ''), 'Failed to get login form url (3).'
+		assert (login_relay_state_token != ''), 'Failed to get relay State (3).'
 
-		# redirect to link from login and extract state and code values
-		r = self.session.get(ref_url, allow_redirects=False, headers = AUTHHEADERS)
-		assert (r.status_code == 302), "Car Net post login error (5)."
-		ref_url2 = r.headers.get("location")
+		# Step 4, Get login action url, relay state. hmac token 1 and login CSRF from form contents
+		login_form_location_response = self.session.get(login_form_url, headers=auth_request_headers)
+		assert (login_form_location_response.status_code == 200), "WE Connect portal not availble (4)."
+		login_form_location_response_data = remove_newline_chars(login_form_location_response.text)
+		hmac_token1 = extract_login_hmac(login_form_location_response_data)
+		login_csrf = extract_login_csrf(login_form_location_response_data)
+		assert (login_csrf != ''), 'Failed to get login form csrf (4).'
+		assert (hmac_token1 != ''), 'Failed to get login form hmac token (4).'
 
-		code = extract_code(ref_url2)
-		state = extract_state(ref_url2)
-
-		# load ref page
-		r = self.session.get(ref_url2, headers = AUTHHEADERS)
-		assert (r.status_code == 200), "Car Net post login error (6)."
-
-		AUTHHEADERS["Faces-Request"] = ""
-		AUTHHEADERS["Referer"] = ref_url2
+		# Step 5, Post identifier data
+		del auth_request_headers['X-CSRF-Token']
+		auth_request_headers['Referer'] = login_form_url
+		auth_request_headers['Content-Type'] = 'application/x-www-form-urlencoded'
 		post_data = {
-			'_33_WAR_cored5portlet_code': code,
-			'_33_WAR_cored5portlet_landingPageUrl': ''
+			'email': self.carnet_username,
+			'relayState': login_relay_state_token,
+			'hmac': hmac_token1,
+			'_csrf': login_csrf,
 		}
-		r = self.session.post(base + urlsplit(
-			ref_url2).path + '?p_auth=' + state + '&p_p_id=33_WAR_cored5portlet&p_p_lifecycle=1&p_p_state=normal&p_p_mode=view&p_p_col_id=column-1&p_p_col_count=1&_33_WAR_cored5portlet_javax.portlet.action=getLoginStatus',
-				   data=post_data, allow_redirects=False, headers=AUTHHEADERS)
-		assert (r.status_code == 302), "Car Net post login error (7)."
+		login_action_url = auth_base_url + '/signin-service/v1/' + client_id + '/login/identifier'
+		login_action_url_response = self.session.post(login_action_url, data=post_data, headers=auth_request_headers, allow_redirects=True)
+		assert (login_action_url_response.status_code == 200), "WE Connect portal not availble (5)."
+		auth_request_headers['Referer'] = login_action_url
+		auth_request_headers['Content-Type'] = 'application/x-www-form-urlencoded'
+		login_action2_url = auth_base_url + '/signin-service/v1/' + client_id + '/login/authenticate'
+		login_action_url_response_data = remove_newline_chars(login_action_url_response.text)
+		hmac_token2 = extract_login_hmac(login_action_url_response_data)
+		assert (hmac_token2 != ''), 'Failed to get login form hmac token (5).'
 
-		ref_url3 = r.headers.get("location")
-		r = self.session.get(ref_url3, headers=AUTHHEADERS)
+		# Step 6, Post login data to authenticate
+		login_data = {
+			'email': self.carnet_username,
+			'password': self.carnet_password,
+			'relayState': login_relay_state_token,
+			'hmac': hmac_token2,
+			'_csrf': login_csrf,
+			'login': 'true'
+		}
+		login_post_response = self.session.post(login_action2_url, data=login_data, headers=auth_request_headers, allow_redirects=True)
+		assert (login_post_response.status_code == 200), "WE Connect portal not availble (6)."
+		ref2_url = login_post_response.url                      
+		portlet_code = extract_url_parameter(ref2_url, 'code')
+		state = extract_url_parameter(ref2_url, 'state')
+		assert (portlet_code != ''), 'Failed to get portlet_code (6).'
+		assert (state != ''), 'Failed to get login state (6).'
 
-		# We have a new CSRF
-		csrf = extract_csrf(r)
+		# Step 7 Post login data to complete login url
+		auth_request_headers['Referer'] = ref2_url
+		portlet_data = {'_33_WAR_cored5portlet_code': portlet_code}
+		final_login_url = base_url + '/portal/web/guest/complete-login?p_auth=' + state +        '&p_p_id=33_WAR_cored5portlet&p_p_lifecycle=1&p_p_state=normal&p_p_mode=view&p_p_col_id=column-1&p_p_col_count=1&_33_WAR_cored5portlet_javax.portlet.action=getLoginStatus'
+		complete_login_response = self.session.post(final_login_url, data=portlet_data, allow_redirects=False, headers=auth_request_headers)
+		assert (complete_login_response.status_code == 302), "WE Connect portal not availble (7)."
+		base_json_url = complete_login_response.headers.get('location')
+		assert (base_json_url != ''), 'Failed to get base portal url (7).'
+
+		# Step 8 Get base JSON url for commands 
+		base_json_response = self.session.get(base_json_url, headers=auth_request_headers)
+		assert (base_json_response.status_code == 200), "WE Connect portal not availble (8)."
+		csrf = extract_csrf(base_json_response.text)
+		assert (csrf != ''), 'Failed to get final CSRF (8).'
 
 		# Update headers for requests
-		self.headers["Referer"] = ref_url3
+		self.headers["Referer"] = base_json_url
 		self.headers["X-CSRF-Token"] = csrf
-		self.url = ref_url3
+		self.url = base_json_url
 
 	def _carnet_post(self, command):
 		r = self.session.post(self.url + command, headers = self.headers)
